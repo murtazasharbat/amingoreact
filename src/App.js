@@ -1,26 +1,73 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect, useContext } from "react";
+import Jumbotron from "./Jumbotron";
+import Feed from './Feed';
+import RegistrationForm from './RegistrationForm';
+import LoginForm from './LoginForm';
+import AppContext from './AppContext'
 
-function App() {
+const App = () => {
+
+   const [state, setState] = useState(
+        {
+            posts: [],
+            postsLoaded: false,
+            loadMore: false
+        }
+   )
+
+   const [globalState, setGlobalState] = useContext(AppContext);
+  
+   useEffect(()=>{
+        if(!state.postsLoaded) {
+            // Make fetch request to backend
+            fetch('http://localhost:3010/feed/all')
+            // Run .json() to convert the backend response
+            .then(response => response.json())
+            // Change the state for posts array
+            .then(json=>{
+                setState({ 
+                    ...state, 
+                    posts: json,
+                    postsLoaded: true
+                });
+
+                console.log(json)
+            })
+            .catch(e=>console.log('error', e))
+        }
+   });
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+        <div className="page">
+        <Jumbotron 
+            title="The Newsletter"
+            lead="Welcome to ABC.com, the biggest platform for the alphabet."
+            moreInfo="Click here to learn more about learning ABC"
+            buttonLabel="Signup"
+        />
+        
+        { globalState.loggedIn !== 'true' && <LoginForm />}
+
+        { 
+        globalState.loggedIn === 'true' && 
+            <div className="container">        
+                { 
+                    state.posts.map(
+                        (post)=><Feed 
+                        _id={post._id}
+                        image={post.image}
+                        title={post.username}
+                        description={post.comment}
+                        buttonLabel={
+                            post.likes.includes(globalState.userid) ? 'Unlike' : 'Like'
+                        }
+                        />
+                    )
+                }
+            </div>
+        }
+        </div>   
   );
-}
+};
 
 export default App;
